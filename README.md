@@ -1,6 +1,6 @@
 # Docker 101 (Linux)
 
-We'll start with the basics and get a feel for running Docker on Linux.
+In this lab take a look at some basic Docker commands and a simple build-ship-run workflow. 
 
 ## PreRequisites
 
@@ -14,7 +14,7 @@ Before we start you'll need to gain access to your Linux VM, clone a GitHub repo
 ### Clone the Lab GitHub Repo
 All of the exercises will be done in the console window on the right of ths screen. 
 
-1. In the Linux VM clone the demo GitHub repo
+1. In the Linux console clone the demo GitHub repo
 
 ```
 	git clone https://github.com/mikegcoleman/docker101-linux
@@ -42,10 +42,15 @@ In this section you'll try each of those options and see how Docker manages the 
 
 ### Run a task in an Alpine Linux container
 
-This is the simplest kind of container to start with. In PowerShell run:
+This is the simplest kind of container to start with. In your Linux console run:
 
 ```
 docker container run alpine hostname
+```
+
+You will see some output that a local Docker image can't be found locally, so one is pulled. And after the image is pulled the hostname will be displayed (`888e89a3b36b` in our example below)
+
+```
 Unable to find image 'alpine:latest' locally
 latest: Pulling from library/alpine
 88286f41530e: Pull complete
@@ -54,26 +59,24 @@ Status: Downloaded newer image for alpine:latest
 888e89a3b36b
 ```
 
-You'll see the output written from the `hostname` command. 
-
 Docker keeps a container running as long as the process it started inside the container is still running. In this case the `hostname` process completes when the output is written, so the container stops. The Docker platform doesn't delete resources by default, so the container still exists. 
 
 List all containers and you'll see your Alpine Linux container in the `Exited` state:
 
 ```
-> docker container ls --all
+docker container ls --all
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS            PORTS               NAMES
 888e89a3b36b        alpine              "hostname"          50 seconds ago      Exited (0) 49 seconds ago                       awesome_elion
 ```
 
 > Note that the container ID *is* the hostname that the container displayed. In the example above it's `888e89a3b36b`
 
-Containers which do one task and then exit can be very useful. You could build a Docker image executes a script to configure some component. Anyone can execute that task just by running the container - they don't need the actual scripts or configuration information - they just need to pull the Docker image
+Containers which do one task and then exit can be very useful. You could build a Docker image executes a script to configure some component. Anyone can execute that task just by running the container - they don't need the actual scripts or configuration information - they just need to pull and run the Docker image
 
 
 ### Run an interactive an Ubuntu container
 
-You can run a container that is a different version of Linux than the version running on the the host serving up your containers. For instance we are running Alpine to host these labs, but we're goint to start an Ubuntu container. 
+You can run a container that is a different version of Linux than the version running on the the host serving up your containers. For instance we are running Alpine to host these labs, but we're going to start an Ubuntu container. 
 
 ```
 docker container run --interactive --tty --rm ubuntu bash
@@ -87,7 +90,7 @@ Run some commands:
 - `ps aux` - shows all running processes in the container. 
 - `cat /etc/issue` - shows which linux distro you are running, in this case Ubuntu 16.04 LTS
 
-Now run `exit` to leave the shell session, which stops the container process. Using the `--rm` flag means Docker now removes that container (if you run `docker container ls --all` again, you won't see the Ubuntu container).
+Now run `exit` to leave the shell session, which stops the container process. Using the `--rm` flag when we started up the container means Docker now removes that container (if you run `docker container ls --all` again, you won't see the Ubuntu container).
 
 For fun let's check the version of our host VM
 
@@ -97,7 +100,7 @@ Welcome to Alpine Linux 3.6
 Kernel \r on an \m (\l)
 ```
 
-Notice that our host VM is Alpine, yet we were able to run an Ubuntu container. With Linux containers the OS of the container does not need to match the OS of the Docker host it is running on. 
+Notice that our host VM is Alpine, yet we were able to run an Ubuntu container. As previously mentioned, with Linux containers the OS of the container does not need to match the OS of the Docker host it is running on. 
 
 Interactive containers are useful when you are putting together your own image. You can run a container and verify all the steps you need to deploy your app, and capture them in a Dockerfile. 
 
@@ -108,7 +111,7 @@ Interactive containers are useful when you are putting together your own image. 
 
 Background containers are how you'll run most applications. Here's a simple example using MySQL.
 
-Let's run MySQL in the background as a detached container and name the running container `mydb`. We'll also use an environment variable to set the root password (NOTE: This should never be done in production):
+Let's run MySQL in the background as a detached container (`--detach`) and name the running container `mydb`. We'll also use an environment variable to set the root password (NOTE: This should never be done in production):
 
 ```
 docker container run \
@@ -150,9 +153,9 @@ PID                 USER                TIME                COMMAND
 2876                999                 0:00                mysqld
 ```
 
-The MySQL instance is isolated in the container, because no ports have been made available to the host. Traffic can't get into Docker containers from the host, unless ports are explicitly published. You can't connect an external client. Other containers in the same Docker network can access the MySQL container, and you can run commands inside the container through Docker.
+The MySQL instance is isolated in the container, because no ports have been made available to the host. Traffic can't get into Docker containers from the host, unless ports are explicitly published. You can't connect an external client. Other containers in the same Docker network can access the MySQL container, and you can run commands inside the container through Docker. 
 
-List the MYSQL version
+List the MYSQL version using `docker exec`:
 
 ```
 docker exec -it mydb \
@@ -168,8 +171,7 @@ mysql  Ver 14.14 Distrib 5.7.19, for Linux (x86_64) using  EditLine wrapper
 
 Next you'll learn how to package your own apps as Docker images, using a [Dockerfile](https://docs.docker.com/engine/reference/builder/). 
 
-The Dockerfile syntax is straightforward. In this task you'll walk through two Dockerfiles which package websites to run in Docker containers. The first example is very simple, and the second is more involved. By the end of this task you'll have a good understanding of the main Dockerfile instructions.
-
+The Dockerfile syntax is straightforward. In this task we're going to create an NGINX website from a Dockerfile.
 
 ### Build a simple website image
 
@@ -199,7 +201,7 @@ Make sure you're in the right directory:
 cd ~/docker101-linux/linux_tweet_app
 ```
 
-Then issue the `docker build` commmand to create a new Docker image. 
+Then issue the `docker image build` commmand to create a new Docker image. 
 
 ```
 docker image build --tag <your docker cloud id>/linux_tweet_app:1.0 .
@@ -294,7 +296,7 @@ Now go to your running website and refresh the page. Notice that the site has ch
 
 > If you are comfortable with `vi` you can use it to load the `index.html` file and make additional changes. Those too would be reflected when you reload the webpage. 
 
-Even though we've modified the local file system and that was reflected in the running container. We've not actually changed the original Docker image, all we've changed is the local copy of the `index.html` file.
+Even though we've modified the local file system and that was reflected in the running container, we've not actually changed the original Docker image, all we've changed is the local copy of the `index.html` file.
 
 To show this, let's stop the current container and re-run the `1.0` image without a bind mount. 
 
@@ -312,7 +314,7 @@ To show this, let's stop the current container and re-run the `1.0` image withou
 	<your docker cloud id>/linux_tweet_app:1.0
 	```
 
-	Click the `80` in the PWD interface to view the website. Notice it's back to normal. 
+	Click the `80` in the PWD interface to view the website. Notice it's back to the original version. 
 
 ### Save our Changes
 
