@@ -24,13 +24,13 @@ All of the exercises will be done in the console window on the right of ths scre
 
 If you do not have a DockerID (a free login used to access Docker Cloud, Docker Store, and Docker Hub), please visit [Docker Cloud](https://cloud.docker.com) to register for one. 
 
-## Steps
+## Table of Contents
 
-* [1. Run some simple Docker containers](#1)
-* [2. Explore the filesystem and users in Windows containers](#2)
-* [3. Package and run a custom app using Docker](#3)
+* [Task 1: Run some simple Docker containers](#1)
+* [Task 2: Package and run a custom app using Docker](#2)
+* [Task 3: Modify a Running Website](#3)
 
-## <a name="1"></a>Step 1. Run some simple Windows Docker containers
+## <a name="1"></a>Step 1. Run some simple Docker containers
 
 There are different ways to use containers:
 
@@ -81,7 +81,7 @@ docker container run --interactive --tty --rm ubuntu bash
 
 When the container starts you'll drop into the bash shell with the default prompt `root@<container id>:/#`. Docker has attached to the shell in the container, relaying input and output between your local session and the shell session in the container.
 
-Run some commands to see how the Windows Server Core image is built:
+Run some commands:
 
 - `ls /` - lists the contents of the root directory
 - `ps aux` - shows all running processes in the container. 
@@ -150,7 +150,7 @@ PID                 USER                TIME                COMMAND
 2876                999                 0:00                mysqld
 ```
 
-The MySQL instance is isolated in the container, because no ports have been made available to the host. Traffic can't get into Docker containers from the host, unless ports are explicitly published. You can't connect an external client. Other containers in the same Docker network can access the SQL Server container, and you can run commands inside the container through Docker.
+The MySQL instance is isolated in the container, because no ports have been made available to the host. Traffic can't get into Docker containers from the host, unless ports are explicitly published. You can't connect an external client. Other containers in the same Docker network can access the MySQL container, and you can run commands inside the container through Docker.
 
 List the MYSQL version
 
@@ -164,7 +164,7 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 mysql  Ver 14.14 Distrib 5.7.19, for Linux (x86_64) using  EditLine wrapper
 ```
 
-## <a name="2"></a>Step 2: Package and run a custom app using Docker
+## <a name="2"></a>Task 2: Package and run a custom app using Docker
 
 Next you'll learn how to package your own apps as Docker images, using a [Dockerfile](https://docs.docker.com/engine/reference/builder/). 
 
@@ -255,7 +255,7 @@ Once you've accessed your website, let's shut it remove it.
 
 `docker container rm --force linux_tweet_app`
 
-## Modify a running website
+## <a name="3"></a>Task 3: Modify a running website
 
 If you're actively working on an application it would be inconvenient to have to stop the container, rebuild the image, and run a new version every time you make a change to your source code. 
 
@@ -386,7 +386,7 @@ We now have two versions of our web app.
 	```
 4. PWD will add an `8080` at the top of the screen click that to view the old website.
 
-## Push your images to Docker Hub
+### Push your images to Docker Hub
 
 Now if you list the images and filter on your Docker ID, you'll see the images you've built today, with the newest at the top:
 
@@ -396,9 +396,9 @@ REPOSITORY              TAG                 IMAGE ID            CREATED         
 <need to update>
 ```
 
-Those images are only stored in the cache on your linux VM, and that VM will be deleted after the workshop. Next we'll push the images to a public repository so you can run them from any Windows machine with Docker.
+Those images are only stored in the cache on your linux VM, and that VM will be deleted after the workshop. Next we'll push the images to a public repository so you can run them from any Linux machine with Docker.
 
-Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Windows and Docker.
+Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Linux and Docker.
 
 [Docker Hub](https://hub.docker.com) is the public registry for Docker images. 
 
