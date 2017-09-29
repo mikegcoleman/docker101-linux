@@ -17,7 +17,7 @@ All of the exercises will be done in the console window on the right of ths scre
 1. In the Linux VM clone the demo GitHub repo
 
 ```
-git clone https://github.com/mikegcoleman/docker101-linux
+	git clone https://github.com/mikegcoleman/docker101-linux
 ```
 
 ### Make sure you have a DockerID
@@ -40,7 +40,7 @@ There are different ways to use containers:
 
 In this section you'll try each of those options and see how Docker manages the workload.
 
-## Run a task in an Alpine Linux container
+### Run a task in an Alpine Linux container
 
 This is the simplest kind of container to start with. In PowerShell run:
 
@@ -71,7 +71,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 Containers which do one task and then exit can be very useful. You could build a Docker image executes a script to configure some component. Anyone can execute that task just by running the container - they don't need the actual scripts or configuration information - they just need to pull the Docker image
 
 
-## Run an interactive an Ubuntu container
+### Run an interactive an Ubuntu container
 
 You can run a container that is a different version of Linux than the version running on the the host serving up your containers. For instance we are running Alpine to host these labs, but we're goint to start an Ubuntu container. 
 
@@ -104,7 +104,7 @@ Interactive containers are useful when you are putting together your own image. 
 > You *can* [commit](https://docs.docker.com/engine/reference/commandline/commit/) a container to make an image from it - but you should avoid that wherever possible. It's much better to use a repeatable [Dockerfile](https://docs.docker.com/engine/reference/builder/) to build your image. You'll see that shortly.
 
 
-## Run a background SQL Server container
+### Run a background MySQL container
 
 Background containers are how you'll run most applications. Here's a simple example using MySQL.
 
@@ -171,9 +171,9 @@ Next you'll learn how to package your own apps as Docker images, using a [Docker
 The Dockerfile syntax is straightforward. In this task you'll walk through two Dockerfiles which package websites to run in Docker containers. The first example is very simple, and the second is more involved. By the end of this task you'll have a good understanding of the main Dockerfile instructions.
 
 
-## Build a simple website image
+### Build a simple website image
 
-Have a look at the, which builds a simple website that allows you to send a tweet. 
+Let's have a look at the folowing Dockerfile, which builds a simple website that allows you to send a tweet. 
 
 ```
 FROM nginx:latest
@@ -191,11 +191,19 @@ CMD ["nginx", "-g", "daemon off;"]
 - [EXPOSE](https://docs.docker.com/engine/reference/builder/#expose) instructs Docker to make certain networking ports available on the container. 
 - [CMD](https://docs.docker.com/engine/reference/builder/#cmd) specifies what command to run when our container starts up. Notice that we can specify the command, as well as command line parameters
 
-We will use the Docker build command to create our image. We pass it a name for our image (or a tag) with the `--tag` parameter and then the `.` instructs Docker to use the current directory
+We will use the Docker build command to create our image. We pass it a name for our image (or a tag) with the `--tag` parameter (which includes a version number `1.0`) and then the `.` instructs Docker to use the current directory
+
+Make sure you're in the right directory:
 
 ```
 cd ~/docker101-linux/linux_tweet_app
-docker image build --tag <your docker cloud id>/linux_tweet_app .
+```
+
+Then issue the `docker build` commmand to create a new Docker image. 
+
+```
+docker image build --tag <your docker cloud id>/linux_tweet_app:1.0 .
+
 Sending build context to Docker daemon  32.77kB
 Step 1/5 : FROM nginx:latest
 latest: Pulling from library/nginx
@@ -223,7 +231,7 @@ Successfully tagged <your dockerid>/linux_tweet_app:latest
 
 > **NOTE**: Make sure you change the `build` line to include your actual docker id. For example if your Docker ID is `janedoe` the build line would be:
 > 
-> `docker image build --tag janedoe/linux_tweet_app .`
+> `docker image build --tag janedoe/linux_tweet_app:1.0 .`
 
 
 The output shows Docker executing each instruction in the Dockerfile, and tagging the final image with your Docker ID.
@@ -231,48 +239,92 @@ The output shows Docker executing each instruction in the Dockerfile, and taggin
 Run your website using a detached container, just like you did with MySQL, but this time publishing the HTTP port so traffic can be passed from the host into the container:
 
 ```
-docker container run --detach --publish 80:80 --name app <your docker cloud id>/linux_tweet_app
+docker container run \
+--detach \
+--publish 80:80 \
+--name linux_tweet_app \
+<your docker cloud id>/linux_tweet_app:1.0
 ```
 
 Any external traffic coming into the server on port 80 will now be directed into the container. When you're connected to the host, to browse the website you need to fetch the IP address of the container:
 
+### Access the running website
 Play With Docker should display an `80` at the top of the page, which you can click to access your website.
 
+Once you've accessed your website, let's shut it remove it. 
+
+`docker container rm --force linux_tweet_app:1.0`
 
 ## Modify a running website
 
-For the next example, the [Dockerfile](part-1/tweet-app/Dockerfile) is a better representation of a real-world script. These are the main features:
+If you're actively working on an application it would be inconvenient to have to stop the container, rebuild the image, and run a new version every time you make a change to your source code. 
 
-- it is based [FROM](https://docs.docker.com/engine/reference/builder/#from) `microsoft/iis:windowsservercore`, so the image will start with a clean Windows Server 2016 deployment, with IIS already installed
-- it uses the [SHELL](https://docs.docker.com/engine/reference/builder/#shell) instruction to switch to PowerShell when building the Dockerfile, so the commands to run are all in PowerShell
-- it configures IIS to write all log output to a single file, using the `Set-WebConfigurationProperty` cmdlet
-- it copies the [start.ps1](tweet-app/start.ps1) startup script and [index.html](tweet-app/index.html) files from the host into the image
-- it specifies `start.ps1` as the [ENTRYPOINT](https://docs.docker.com/engine/reference/builder/#entrypoint) to run when containers start. The script starts the IIS Windows Service and relays the log file entries to the console
-- it adds a [HEALTHCHECK](https://docs.docker.com/engine/reference/builder/#healthcheck) which makes an HTTP GET request to the site and returns whether it got a 200 response code
+One way to streamline this process is to mount the source code directory on the local machine into the running container. This will allow any changes made on the local files to be immediately reflected in the container. 
 
-To build the Dockerfile, change to the `tweet-app` directory and run the `build` command:
+We do this using something called a [bind mount](https://docs.docker.com/engine/admin/volumes/bind-mounts/). When you use a bind mount, a file or directory on the host machine is mounted into a container.
 
-```
-cd "$env:workshop\part-1\tweet-app"
-docker image build --tag "$env:dockerId/tweet-app" .
-```
+### Start our web app with a bind mount 
 
-You'll see output on the screen as Docker runs each instruction in the Dockerfile. Once it's built you'll see a `Successfully built...` message. If you repeat the `docker image build` command again, it will complete in seconds. That's because Docker caches the [image layers](https://docs.docker.com/engine/userguide/storagedriver/imagesandcontainers/) and only runs instructions if the Dockerfile has changed since the cached version.
+Let's start the our web app and mount the current directory into the container. 
 
-When the build completes, run the new app in the same way:
+> Make sure you're still in the `linux_tweet_app` directory
 
 ```
-docker container run --detach --publish 8080:80 --name tweet-app "$env:dockerId/tweet-app"
+docker container run \
+--detach \
+--publish 80:80 \
+--name linux_tweet_app \
+--mount type=bind,source="$(pwd)",target=/usr/share/nginx/html
+<your docker cloud id>/linux_tweet_app:1.0
 ```
 
-Find the container IP address and browse to it:
+> Remember from our Dockerfile `usr/share/nginx/html` is where are html files are stored for our web app
+
+Click the `80` the top of the screen to verify your website is running.
+
+### Modify the running website
+
+Because we did a bind mount, any changes made to the local file system are immediately reflected in the running container. 
+
+In the real world you would use an IDE to modify the source code, in the case of our lab we're just going to copy over a new `index.html` file. 
+
+`cp index-new.html index.html`
+
+Now go to your running website and refresh the page. Notice that the site has changed. 
+
+> If you are comfortable with `vi` you can use it to load the `index.html` file and make additional changes. Those too would be reflected when you reload the webpage. 
+
+### Save our Changes
+
+Even though we've modified the local file system and that was reflected in the running container. We've not actually changed the original Docker image, all we've changed is the local copy of the `index.html` file.
+
+To show this, let's stop the current container and re-run the `1.0` image without a bind mount. 
+
+Stop the currrently running container
+
+`docker rm --force linux_tweet_app`
+
+And rerun the current version without a bind mount. 
 
 ```
-$ip = docker container inspect --format '{{ .NetworkSettings.Networks.nat.IPAddress }}' tweet-app
-firefox "http://$ip"
+docker container run \
+--detach \
+--publish 80:80 \
+--name linux_tweet_app \
+<your docker cloud id>/linux_tweet_app:1.0
 ```
 
-Feel free to hit the Tweet button, sign in and share your workshop progress :)
+Click the `80` in the PWD interface to view the website. Notice it's back to normal. 
+
+Let's build a new version of our docker image to capture our changes. 
+
+`docker image build --tag <your docker cloud id>/linux_tweet_app:2.0 .`
+
+By using `2.0` we've created a new image. 
+
+Let's look at the images on our system
+
+`docker image ls`
 
 
 ## Push your images to Docker Hub
@@ -280,27 +332,23 @@ Feel free to hit the Tweet button, sign in and share your workshop progress :)
 Now if you list the images and filter on your Docker ID, you'll see the images you've built today, with the newest at the top:
 
 ```
-> docker image ls -f reference="$env:dockerId/*"
+> docker image ls -f reference="<your dockerid>/*"
 REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
-sixeyed/tweet-app       latest              0643d4c6116f        2 minutes ago       10.7GB
-sixeyed/hostname-app    latest              f2ae4ec014c4        28 minutes ago      11.5GB
+<need to update>
 ```
 
-Those images are only stored in the cache on your Azure VM, and that VM will be deleted after the workshop. Next we'll push the images to a public repository so you can run them from any Windows machine with Docker.
+Those images are only stored in the cache on your linux VM, and that VM will be deleted after the workshop. Next we'll push the images to a public repository so you can run them from any Windows machine with Docker.
 
 Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Windows and Docker.
 
 [Docker Hub](https://hub.docker.com) is the public registry for Docker images. You've already logged in using `docker login`, so now upload your images to the Hub:
 
 ```
-docker image push $env:dockerId/hostname-app
-docker image push $env:dockerId/tweet-app
+docker image push <your dockerid>/linux_tweet_app
 ```
 
-You'll see the upload progress for each layer in the Docker image. The `hostname-app` image uplads quickly as it only adds one small layer on top of Microsoft's ASP.NET image. The `tweet-app` image takes longer to push - there are more layers, and the configured IIS layer runs to 40MB. 
-
-The logical size of those images is over 10GB each, but the bulk of that is in the Windows Server Core base image. Those layers are already stored in Docker Hub, so they don't get uploaded - only the new parts of the image get pushed. And Docker shares layers between images, so every image that builds on Windows Server Core will share the cached layers for that image.
-
+You'll see the upload progress for each layer in the Docker image.
+ 
 You can browse to *https://hub.docker.com/r/<your docker id>/* and see your newly-pushed Docker images. These are public repositories, so anyone can pull the image - you don't even need a Docker ID to pull public images.
 
 
