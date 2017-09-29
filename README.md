@@ -8,6 +8,7 @@ Before we start you'll need to gain access to your Linux VM, clone a GitHub repo
 
 ### Access your Linux VM
 1. Visit [Play With Docker](https://hybrid.play-with-docker.com)
+2. Click `Start Session` 
 2. On the left click `+ Add New Instance`
 
 ### Clone the Lab GitHub Repo
@@ -193,8 +194,31 @@ CMD ["nginx", "-g", "daemon off;"]
 We will use the Docker build command to create our image. We pass it a name for our image (or a tag) with the `--tag` parameter and then the `.` instructs Docker to use the current directory
 
 ```
-cd linux_tweet_app
+cd ~/docker101-linux/linux_tweet_app
 docker image build --tag <your docker cloud id>/linux_tweet_app .
+Sending build context to Docker daemon  32.77kB
+Step 1/5 : FROM nginx:latest
+latest: Pulling from library/nginx
+afeb2bfd31c0: Pull complete
+7ff5d10493db: Pull complete
+d2562f1ae1d0: Pull complete
+Digest: sha256:af32e714a9cc3157157374e68c818b05ebe9e0737aac06b55a09da374209a8f9
+Status: Downloaded newer image for nginx:latest
+ ---> da5939581ac8
+Step 2/5 : COPY index.html /usr/share/nginx/html
+ ---> eba2eec2bea9
+Step 3/5 : COPY linux.png /usr/share/nginx/html
+ ---> 4d080f499b53
+Step 4/5 : EXPOSE 80 443
+ ---> Running in 47232cb5699f
+ ---> 74c968a9165f
+Removing intermediate container 47232cb5699f
+Step 5/5 : CMD nginx -g daemon off;
+ ---> Running in 4623761274ac
+ ---> 12045a0df899
+Removing intermediate container 4623761274ac
+Successfully built 12045a0df899
+Successfully tagged <your dockerid>/linux_tweet_app:latest
 ```
 
 > **NOTE**: Make sure you change the `build` line to include your actual docker id. For example if your Docker ID is `janedoe` the build line would be:
@@ -204,7 +228,7 @@ docker image build --tag <your docker cloud id>/linux_tweet_app .
 
 The output shows Docker executing each instruction in the Dockerfile, and tagging the final image with your Docker ID.
 
-Run your website using a detached container, just like you did with SQL Server, but this time publishing the HTTP port so traffic can be passed from the host into the container:
+Run your website using a detached container, just like you did with MySQL, but this time publishing the HTTP port so traffic can be passed from the host into the container:
 
 ```
 docker container run --detach --publish 80:80 --name app <your docker cloud id>/linux_tweet_app
