@@ -253,7 +253,7 @@ Play With Docker should display an `80` at the top of the page, which you can cl
 
 Once you've accessed your website, let's shut it remove it. 
 
-`docker container rm --force linux_tweet_app:1.0`
+`docker container rm --force linux_tweet_app`
 
 ## Modify a running website
 
@@ -274,7 +274,7 @@ docker container run \
 --detach \
 --publish 80:80 \
 --name linux_tweet_app \
---mount type=bind,source="$(pwd)",target=/usr/share/nginx/html
+--mount type=bind,source="$(pwd)",target=/usr/share/nginx/html \
 <your docker cloud id>/linux_tweet_app:1.0
 ```
 
@@ -294,38 +294,97 @@ Now go to your running website and refresh the page. Notice that the site has ch
 
 > If you are comfortable with `vi` you can use it to load the `index.html` file and make additional changes. Those too would be reflected when you reload the webpage. 
 
-### Save our Changes
-
 Even though we've modified the local file system and that was reflected in the running container. We've not actually changed the original Docker image, all we've changed is the local copy of the `index.html` file.
 
 To show this, let's stop the current container and re-run the `1.0` image without a bind mount. 
 
-Stop the currrently running container
+1. Stop and remove the currrently running container
 
-`docker rm --force linux_tweet_app`
+	`docker rm --force linux_tweet_app`
 
-And rerun the current version without a bind mount. 
+2. Rerun the current version without a bind mount. 
 
-```
-docker container run \
---detach \
---publish 80:80 \
---name linux_tweet_app \
-<your docker cloud id>/linux_tweet_app:1.0
-```
+	```
+	docker container run \
+	--detach \
+	--publish 80:80 \
+	--name linux_tweet_app \
+	<your docker cloud id>/linux_tweet_app:1.0
+	```
 
-Click the `80` in the PWD interface to view the website. Notice it's back to normal. 
+	Click the `80` in the PWD interface to view the website. Notice it's back to normal. 
 
-Let's build a new version of our docker image to capture our changes. 
+### Save our Changes
 
-`docker image build --tag <your docker cloud id>/linux_tweet_app:2.0 .`
+To save our changes we need to build a new version of our Docker image that includes the updated `index.html`
 
-By using `2.0` we've created a new image. 
+1.  Stop and remove the current container
 
-Let's look at the images on our system
+	`docker rm --force linux_tweet_app`
 
-`docker image ls`
 
+2. Let's build a new version of our docker image to capture our changes. This build will copy in the updated `index.html` file. By using `2.0` in our image tag, we'll create a new version
+
+	```
+	docker image build --tag <your docker cloud id>/linux_tweet_app:2.0 .
+	Sending build context to Docker daemon  32.77kB
+Step 1/5 : FROM nginx:latest
+ ---> da5939581ac8
+Step 2/5 : COPY index.html /usr/share/nginx/html
+ ---> 930df73e7f34
+Step 3/5 : COPY linux.png /usr/share/nginx/html
+ ---> 61135e5c6147
+Step 4/5 : EXPOSE 80 443
+ ---> Running in bc9208e41196
+ ---> db5be93530c2
+Removing intermediate container bc9208e41196
+Step 5/5 : CMD nginx -g daemon off;
+ ---> Running in 1799d496012e
+ ---> 36f86c329a7d
+Removing intermediate container 1799d496012e
+Successfully built 36f86c329a7d
+Successfully tagged <your dockerid>/linux_tweet_app:2.0
+   ```
+	> Notice how fast that built? It's because Docker only modified the portion of the image that changed vs. rebuilding the whole image. 
+
+2. Let's look at the images on our system
+
+	```
+	docker image ls
+	REPOSITORY                       	TAG                 IMAGE ID            CREATED             SIZE
+<your dockerid>/linux_tweet_app   	2.0                 36f86c329a7d        32 seconds ago      108MB
+<your dockerid>/linux_tweet_app   	1.0                 d11c8f88a335        12 minutes ago      108MB
+nginx                          		latest              da5939581ac8        2 weeks ago         108MB
+	```
+	
+We now have two versions of our web app. 
+
+### Test the new version	
+
+1. Let's run our new version
+	
+	```
+	docker container run \
+	--detach \
+	--publish 80:80 \
+	--name linux_tweet_app \
+	<your docker cloud id>/linux_tweet_app:2.0
+	```
+
+2. Click on the `80` to view the updated version
+
+	We can run both versions side by side. The only thing we need to be aware of is that a port can only be exposed once per host. Since we're already using port 80 for the new version, we will tell all requests coming into port 8080 to go to the old version. Additionally, we need to give our container a unique name (`old_linux_tweet_app`)
+	
+3. Run the old version
+	
+	```
+	docker container run \
+	--detach \
+	--publish 8080:80 \
+	--name old_linux_tweet_app \
+	<your docker cloud id>/linux_tweet_app:1.0
+	```
+4. PWD will add an `8080` at the top of the screen click that to view the old website.
 
 ## Push your images to Docker Hub
 
@@ -341,15 +400,34 @@ Those images are only stored in the cache on your linux VM, and that VM will be 
 
 Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Windows and Docker.
 
-[Docker Hub](https://hub.docker.com) is the public registry for Docker images. You've already logged in using `docker login`, so now upload your images to the Hub:
+[Docker Hub](https://hub.docker.com) is the public registry for Docker images. 
 
-```
-docker image push <your dockerid>/linux_tweet_app
-```
+1. Before you cna push your images, you will need to log into Docker Hub
 
-You'll see the upload progress for each layer in the Docker image.
+	`docker login`
+
+2. Push each version of your web app using `docker push`
+
+	```
+	docker image push <your dockerid>/linux_tweet_app:1.0
+	The push refers to a repository [docker.io/mikegcoleman/linux_tweet_app]
+	910e84bcef7a: Pushed
+	1dee161c8ba4: Pushed
+	110566462efa: Pushed
+	305e2b6ef454: Pushed
+	24e065a5f328: Pushed
+	1.0: digest: sha256:51e937ec18c7757879722f15fa1044cbfbf2f6b7eaeeb578c7c352baba9aa6dc size: 1363
+	```
+	
+	```
+	docker image push <your dockerid>/linux_tweet_app:2.0
+	The push refers to a repository [docker.io/mikegcoleman/linux_tweet_app]
+	0b171f8fbe22: Pushed
+	70d38c767c00: Pushed
+	110566462efa: Layer already exists
+	305e2b6ef454: Layer already exists
+	24e065a5f328: Layer already exists
+	2.0: digest: sha256:7c51f77f90b81e5a598a13f129c95543172bae8f5850537225eae0c78e4f3add size: 1363
+	```
  
 You can browse to *https://hub.docker.com/r/<your docker id>/* and see your newly-pushed Docker images. These are public repositories, so anyone can pull the image - you don't even need a Docker ID to pull public images.
-
-
-```
