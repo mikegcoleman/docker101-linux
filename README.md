@@ -330,23 +330,24 @@ To save our changes we need to build a new version of our Docker image that incl
 	```
 	docker image build --tag <your docker cloud id>/linux_tweet_app:2.0 .
 	Sending build context to Docker daemon  32.77kB
-Step 1/5 : FROM nginx:latest
- ---> da5939581ac8
-Step 2/5 : COPY index.html /usr/share/nginx/html
- ---> 930df73e7f34
-Step 3/5 : COPY linux.png /usr/share/nginx/html
- ---> 61135e5c6147
-Step 4/5 : EXPOSE 80 443
- ---> Running in bc9208e41196
- ---> db5be93530c2
-Removing intermediate container bc9208e41196
-Step 5/5 : CMD nginx -g daemon off;
- ---> Running in 1799d496012e
- ---> 36f86c329a7d
-Removing intermediate container 1799d496012e
-Successfully built 36f86c329a7d
-Successfully tagged <your dockerid>/linux_tweet_app:2.0
-   ```
+	Step 1/5 : FROM nginx:latest
+	 ---> da5939581ac8
+	Step 2/5 : COPY index.html /usr/share/nginx/html
+	 ---> 930df73e7f34
+	Step 3/5 : COPY linux.png /usr/share/nginx/html
+	 ---> 61135e5c6147
+	Step 4/5 : EXPOSE 80 443
+	 ---> Running in bc9208e41196
+	 ---> db5be93530c2
+	Removing intermediate container bc9208e41196
+	Step 5/5 : CMD nginx -g daemon off;
+	 ---> Running in 1799d496012e
+	 ---> 36f86c329a7d
+	Removing intermediate container 1799d496012e
+	Successfully built 36f86c329a7d
+	Successfully tagged <your dockerid>/linux_tweet_app:2.0
+   	```
+	
 	> Notice how fast that built? It's because Docker only modified the portion of the image that changed vs. rebuilding the whole image. 
 
 2. Let's look at the images on our system
@@ -354,9 +355,9 @@ Successfully tagged <your dockerid>/linux_tweet_app:2.0
 	```
 	docker image ls
 	REPOSITORY                       	TAG                 IMAGE ID            CREATED             SIZE
-<your dockerid>/linux_tweet_app   	2.0                 36f86c329a7d        32 seconds ago      108MB
-<your dockerid>/linux_tweet_app   	1.0                 d11c8f88a335        12 minutes ago      108MB
-nginx                          		latest              da5939581ac8        2 weeks ago         108MB
+	<your dockerid>/linux_tweet_app   	2.0                 36f86c329a7d        32 seconds ago      108MB
+	<your dockerid>/linux_tweet_app   	1.0                 d11c8f88a335        12 minutes ago      108MB
+	nginx                          		latest              da5939581ac8        2 weeks ago         108MB
 	```
 	
 We now have two versions of our web app. 
@@ -394,8 +395,9 @@ Now if you list the images and filter on your Docker ID, you'll see the images y
 
 ```
 > docker image ls -f reference="<your dockerid>/*"
-REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
-<need to update>
+REPOSITORY                        TAG                 IMAGE ID            CREATED             SIZE
+<your dockerid>/linux_tweet_app   2.0                 b73b8f06499d        4 seconds ago       108MB
+<your dockerid>/linux_tweet_app   1.0                 27659868865b        14 minutes ago      108MB
 ```
 
 Those images are only stored in the cache on your linux VM, and that VM will be deleted after the workshop. Next we'll push the images to a public repository so you can run them from any Linux machine with Docker.
