@@ -7,7 +7,7 @@ In this lab take a look at some basic Docker commands and a simple build-ship-ru
 Before we start you'll need to gain access to your Linux VM, clone a GitHub repo, and make sure you have a DockerID
 
 ### Access your Linux VM
-1. Visit [Play With Docker](https://hybrid.play-with-docker.com)
+1. Visit [Play With Docker](https://labs.play-with-docker.com)
 2. Click `Start Session` 
 2. On the left click `+ Add New Instance`
 
@@ -406,7 +406,7 @@ Distribution is built into the Docker platform. You can build images locally and
 
 [Docker Hub](https://hub.docker.com) is the public registry for Docker images. 
 
-1. Before you cna push your images, you will need to log into Docker Hub
+1. Before you can push your images, you will need to log into Docker Hub
 
 	`docker login`
 
