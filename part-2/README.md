@@ -2,9 +2,22 @@
 
 We had an introduction to volumes by way of bind mounts earlier, but let's take a deeper look at the Docker file system and volumes. 
 
-Let's start by looking at layers and the copy on write file system. 
+The [Docker documentation](https://docs.docker.com/engine/userguide/storagedriver/imagesandcontainers/_) gives a great explanation on how storage works with Docker images and containers, but here's the high points. 
 
-Each line in a Dockerfile creates a new layer in our image, and layers will be shared across images on the same host. Let's look at this in action
+* Images are comprised of layers
+* These layers are added by each line in a Dockerfile
+* Images on the same host or registry will share layers if possible
+* When container is started it gets a unique writeable layer of its own to capture changes that occur while it's running
+* Layers exist on the host file system in some form (usually a directory, but not always) and are managed by a [storage driver](https://docs.docker.com/engine/userguide/storagedriver/selectadriver/) to present a logical filesystem in the running container. 
+* When a container is removed the unique writeable layer (and everything in it) is removed as well
+* To persist data (and improve performance) Volumes are used. 
+* Volumes (and the directories they are built on) are not managed by the storage driver, and will live on if a container is removed.  
+
+The following exercises will help to illustrate those concepts in practicc. 
+
+Let's start by looking at layers and how files written to a container are managed by something called *copy on write*.
+
+## Layers and Copy on Write
 
 1. Pull down the Debian:Jessie image
 
@@ -47,9 +60,9 @@ Notice that the layer id (`85b1f47fba498`) is the same for the first layer of th
 
 So, what does that tell us about the MySQL image? Well we know that it's based on the Debian:Jessie base image. We can confirm this by looking at the [Dockerfile on Docker Store](https://github.com/docker-library/mysql/blob/0590e4efd2b31ec794383f084d419dea9bc752c4/5.7/Dockerfile). 
 
-The very first line is: `FROM debian:jessie`
+The very first line is the the Dockerfile is: `FROM debian:jessie`
 
-Layers in an image are read only, and all containers started from that image will share them. When we start a container from an image we add a single read-write layer to capture any changes to that container as it's running. When a change to the file system is detected it's automatically copied into that read-write layer - this is referred to as *copy on write*.
+Next we'll create a file in our container, and see how that's represented on the host file system. 
 
 1. Start a Debian container, shell into it.   
 
@@ -61,21 +74,65 @@ root@e09203d84deb:/#
 2. Create a file and then list out the directory to make sure it's there:
 
 ```
-root@e09203d84deb:/# touch test-fileroot@e09203d84deb:/# ls
+root@e09203d84deb:/# touch test-file
+root@e09203d84deb:/# ls
 bin   dev  home  lib64  mnt  proc  run   srv  test-file  usrboot  etc  lib   media  opt  root  sbin  sys  tmp        var
 ```
 
-$ docker inspect -f '{{json .GraphDriver.Data}}' debian | jq
 
-$ ls $(docker inspect -f {{.GraphDriver.Data.UpperDir}} debian)
+We can see  `test-file` exists in the root of the containers file system. 
 
-$ ls $(docker inspect -f {{.GraphDriver.Data.MergedDir}} debian)
-
-
-
-We can see our `test-file` there in the root of the containers file system. 
+What has happened is that when a new file was written to the disk, the Docker storage driver placed that file in it's own layer. This is called *copy on write* - as soon as a change is detected the change is copied into a new layer. That layers is represented by a directory on the host file system. All of this is managed by the Docker storage driver. 
 
 3. Exit the container but leave it running by pressing `ctrl-p` and then `ctrl-q`
+
+The Docker hosts for the labs today use OverlayFS with the [overlay2](https://docs.docker.com/engine/userguide/storagedriver/overlayfs-driver/#how-the-overlay2-driver-works) storage driver. 
+
+OverlayFS layers two directories on a single Linux host and presents them as a single directory. These directories are called layers and the unification process is referred to as a union mount. OverlayFS refers to the lower directory as lowerdir and the upper directory a upperdir. "Upper" and "Lower" refer to when the layer was added to the image. In our example the writeable layer is the most "upper" layer.  The unified view is exposed through its own directory called merged. 
+
+We can use Docker's *inspect* command to look at where these directories live on our Docker host's file system. 
+
+> Note: The *inspect* command uses Go templates to allow us to extract out specific information from its output. For more information on how these templates work with *inspect* read this [excellent tutorial](http://container-solutions.com/docker-inspect-template-magic/). 
+
+```
+$ docker inspect -f '{{json .GraphDriver.Data}}' debian | jq
+{
+  "LowerDir": "/var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e-init/diff:/var/lib/docker/overlay2/c2e2db4221ad5dca9f35a92e04d17c79b861ddee30015fa3ddc77c66ae1bf758/diff",
+  "MergedDir": "/var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/merged",
+  "UpperDir": "/var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/diff",
+  "WorkDir": "/var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/work"
+}
+```
+> Note: `WorkDir` is a working directory for the Overlay2 driver
+
+Since the change we made is the newest modification to the Debian container's file system, it's going to be stored in `UpperDir`. 
+
+3. List the contents of the `UpperDir`. First we'll change into the directory, then we'll list the contents. 
+
+```
+$ cd $(docker inspect -f {{.GraphDriver.Data.UpperDir}} debian)
+root       test-file
+```
+`MergedDir` is going to give us a look at the root filesystem of our container which is a combination of `UpperDir` and `LowerDir`:
+
+4. List the contents of `MergedDir`:
+
+```
+$ ls $(docker inspect -f {{.GraphDriver.Data.MergedDir}} debian)
+bin        etc        lib64      opt        run        sys        usr
+boot       home       media      proc       sbin       test-file  var
+dev        lib        mnt        root       srv        tmp
+```
+
+Notice that the directory on our host file system has the same contents as the one inside the container. That's because that directory is what we see in the container. 
+
+> Warning: You should NEVER manipulate your container's file system via the Docker host. This is only being done as an academic exercise. 
+
+
+
+
+
+
 
 
 
