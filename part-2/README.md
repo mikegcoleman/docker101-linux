@@ -62,6 +62,8 @@ So, what does that tell us about the MySQL image? Since each layer is created by
 
 The first line in the the Dockerfile is: `FROM debian:jessie` This will import that layer into the MySQL image. 
 
+So layers are created by Dockerfiles and are are shared between images. When you start a container, a writeable layer is added to the base image. 
+
 Next you will create a file in our container, and see how that's represented on the host file system. 
 
 1. Start a Debian container, shell into it.   
@@ -79,10 +81,9 @@ root@e09203d84deb:/# ls
 bin   dev  home  lib64  mnt  proc  run   srv  test-file  usrboot  etc  lib   media  opt  root  sbin  sys  tmp        var
 ```
 
-
 We can see  `test-file` exists in the root of the containers file system. 
 
-What has happened is that when a new file was written to the disk, the Docker storage driver placed that file in it's own layer. This is called *copy on write* - as soon as a change is detected the change is copied into a new layer. That layers is represented by a directory on the host file system. All of this is managed by the Docker storage driver. 
+What has happened is that when a new file was written to the disk, the Docker storage driver placed that file in it's own layer. This is called *copy on write* - as soon as a change is detected the change is copied into the writeable layer. That layers is represented by a directory on the host file system. All of this is managed by the Docker storage driver. 
 
 3. Exit the container but leave it running by pressing `ctrl-p` and then `ctrl-q`
 
@@ -144,10 +145,6 @@ $ ls
 root        test-file   test-file2
 ```
 
-
-```
-docker inspect -f 'in the {{.Name}} container we mapped {{(index .Mounts 0).Destination}} to {{(index .Mounts 0).Source}}' mysqldb
-```
 
 6. Move back into your Debian container and list the root file system
 
@@ -211,3 +208,81 @@ $ cd
 $ ls /var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/diff
 ls: /var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/diff: No such file or directory
 ```
+
+## Understanding Docker Volumes
+
+Docker volumes are directories on the host file system that are not managed by the storage driver. Since they are not managed by the storage drive they offer a couple of important benefits. 
+
+* **Performance**: Because the storage driver has to create the logical filesystem in the container from potentially many directories on the local host, accessing data can be slow. Especially if there is a lot of write activity to that container. In fact you should try and minimize the amount of writes that happen to the container's filesystem, and instead direct those writes to a volume
+
+* **Persistence**: Volumes are not removed when the container is deleted. They exist until explicitly removed. This means data written to a volume can be reused by other containers. 
+
+Special Note: This next section was adapted from [Arun Gupta's](https://twitter.com/arungupta) excellent [tutorial](http://blog.arungupta.me/docker-mysql-persistence/) on persisting data with MySQL. 
+
+This next section will use MySQL to demonstrate how to achieve data persistence with Docker volumes. 
+
+If you once again look at the MySQL [Dockerfile](https://github.com/docker-library/mysql/blob/0590e4efd2b31ec794383f084d419dea9bc752c4/5.7/Dockerfile) you will find the following line:
+
+```
+VOLUME /var/lib/mysql
+```
+
+This line sets up an anonymous volume in order to increase database performance by avoiding sending a bunch of writes through the Docker storage driver.
+
+Note: An anonymous volume is a volume that hasn't been explicitly named. This means that it's extremely difficult to use the volume later with a new container. Named volumes solve that problem, and will be covered later in this section. 
+
+
+1. Start a MySQL container
+
+```
+$ docker run --name mysqldb -e MYSQL_USER=mysql -e MYSQL_PASSWORD=mysql -e MYSQL_DATABASE=sample -e MYSQL_ROOT_PASSWORD=supersecret -d mysql
+acf185dc16e274b2f332266a1bfc6d1df7d7b4f780e6a7ec6716b40cafa5b3c3
+```
+
+When we start the container the anonymous volume is created:
+
+2. Use Docker inspect to view the details of the anonymous volume
+
+
+```
+$ docker inspect -f 'in the {{.Name}} container {{(index .Mounts 0).Destination}} is mapped to {{(index .Mounts 0).Source}}' mysqldb
+in the /mysqldb container /var/lib/mysql is mapped to /var/lib/docker/volumes/cd79b3301df29d13a068d624467d6080354b81e34d794b615e6e93dd61f89628/_data
+```
+
+3. Change into the volume directory on the local host file system and list the contents
+
+```
+$ cd $(docker inspect -f '{{(index .Mounts 0).Source}}' mysqldb)
+
+$ ls
+auto.cnf            ib_buffer_pool      mysql               server-cert.pem
+ca-key.pem          ib_logfile0         performance_schema  server-key.pem
+ca.pem              ib_logfile1         private_key.pem     sys
+client-cert.pem     ibdata1             public_key.pem
+client-key.pem      ibtmp1              sample
+```
+
+Notice the the directory name starts with `/var/lib/docker/volumes/` whereas for directories managed by the Overlay2 storage driver it was `/var/lib/docker/overlay2`
+
+As mentined anonymous volumes will not persist data between containers, they are almost always used to increase performance. 
+
+3. Shell into your running MySQL container and log into MySQL
+
+```
+$ docker exec --tty --interactive mysqldb
+root@132f4b3ec0dc:/# mysql --user=mysql --password=mysql
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 3
+Server version: 5.7.19 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+```
+
+
