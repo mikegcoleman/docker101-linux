@@ -1,4 +1,4 @@
-# Lab 1: Docker 101 (Linux)
+# Lab 1: Docker 101 (Linux): Basic Docker Commands,Building Docker Images, and Accessing Local Files
 
 In this lab we'll take a look at some basic Docker commands and a simple build-ship-run workflow. We'll start by running some simple docker containers. Then we'll use a *Dockerfile* to build a custom app. Finally, we'll look at how to use bind mounts to modify a running container as you might if you were actively developing using Docker.
 

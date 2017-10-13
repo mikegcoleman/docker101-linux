@@ -1,4 +1,4 @@
-# Docker 101 - Linux (Part 2)
+# Docker 101 - Linux (Part 2): Understanding the Docker File System and Volumes
 
 We had an introduction to volumes by way of bind mounts earlier, but let's take a deeper look at the Docker file system and volumes. 
 
