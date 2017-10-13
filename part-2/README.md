@@ -107,18 +107,23 @@ $ docker inspect -f '{{json .GraphDriver.Data}}' debian | jq
 
 Since the change we made is the newest modification to the Debian container's file system, it's going to be stored in `UpperDir`. 
 
-3. List the contents of the `UpperDir`. First we'll change into the directory, then we'll list the contents. 
+3. List the contents of the `UpperDir`. 
 
 ```
 $ cd $(docker inspect -f {{.GraphDriver.Data.UpperDir}} debian)
+
+$ ls
 root       test-file
 ```
+
 `MergedDir` is going to give us a look at the root filesystem of our container which is a combination of `UpperDir` and `LowerDir`:
 
 4. List the contents of `MergedDir`:
 
 ```
-$ ls $(docker inspect -f {{.GraphDriver.Data.MergedDir}} debian)
+$ cd $(docker inspect -f {{.GraphDriver.Data.MergedDir}} debian)
+
+$ ls
 bin        etc        lib64      opt        run        sys        usr
 boot       home       media      proc       sbin       test-file  var
 dev        lib        mnt        root       srv        tmp
@@ -128,21 +133,81 @@ Notice that the directory on our host file system has the same contents as the o
 
 > Warning: You should NEVER manipulate your container's file system via the Docker host. This is only being done as an academic exercise. 
 
+5. Write a new file to the host file system in the `UpperDir`, and list the directory to see the contents
 
+```
+$ cd $(docker inspect -f {{.GraphDriver.Data.UpperDir}} debian)
 
+$ touch test-file2
 
-
-
-
-
-
-Let's
-
-
-
-
+$ ls
+root        test-file   test-file2
+```
 
 
 ```
 docker inspect -f 'in the {{.Name}} container we mapped {{(index .Mounts 0).Destination}} to {{(index .Mounts 0).Source}}' mysqldb
+```
+
+6. Move back into your Debian container and list the root file system
+
+```
+$ docker attach debian
+
+root@674d7abf10c6:/# ls
+bin   dev  home  lib64  mnt  proc  run   srv  test-file   tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  test-file2  usr
+```
+The file that was created on the local host filesystem (`test-file2`) is now available in the container as well. 
+
+7. Type `exit` to stop your container, which will also stop it
+
+```
+root@674d7abf10c6:/# exit
+exit
+```
+
+8. Ensure that your debian container still exists
+
+```
+$ docker container ls --all
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS           PORTS               NAMES
+674d7abf10c6        debian:jessie       "bash"              36 minutes ago      Exited (0) 2 minutes ago                       debian
+```
+
+9. List out the current directory
+
+```
+$ ls
+root        test-file   test-file2
+```
+
+Because the container still exists, the files are still available on  your file system. At this point you could `docker start` your container and it would be just as it was before you exited. 
+
+However, if we remove the container, the directories on the host file system will be removed, and your changes will be gone
+
+10. Remove the container and list the directory contents
+
+```
+$ docker container rm debian
+debian
+
+$ ls
+```
+
+The files that were created are now gone. You've actually been left in a sort of "no man's land" as the directory you're in has actually been deleted as well.
+
+11. Copy the directory location from the prompt in the terminal. 
+
+12. CD back to your home directory
+
+```
+$ cd
+```
+
+13. Attempt to list the contents of the old `UpperDir` directory.
+
+```
+$ ls /var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/diff
+ls: /var/lib/docker/overlay2/0dad4d523351851af4872f8c6706fbdf36a6fa60dc7a29fff6eb388bf3d7194e/diff: No such file or directory
 ```
