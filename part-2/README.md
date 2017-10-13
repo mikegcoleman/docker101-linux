@@ -58,11 +58,11 @@ The first layer pulled says:
 
 Notice that the layer id (`85b1f47fba498`) is the same for the first layer of the MySQl image and the only layer in the Debian:Jessie image. And because we already had pulled that layer when we pulled the Debian image, we didn't have to pull it again. 
 
-So, what does that tell us about the MySQL image? Well we know that it's based on the Debian:Jessie base image. We can confirm this by looking at the [Dockerfile on Docker Store](https://github.com/docker-library/mysql/blob/0590e4efd2b31ec794383f084d419dea9bc752c4/5.7/Dockerfile). 
+So, what does that tell us about the MySQL image? Since each layer is created by a line in the image's *Dockerfile*, we know that the MySQL image is based on the Debian:Jessie base image. We can confirm this by looking at the [Dockerfile on Docker Store](https://github.com/docker-library/mysql/blob/0590e4efd2b31ec794383f084d419dea9bc752c4/5.7/Dockerfile). 
 
-The very first line is the the Dockerfile is: `FROM debian:jessie`
+The first line in the the Dockerfile is: `FROM debian:jessie` This will import that layer into the MySQL image. 
 
-Next we'll create a file in our container, and see how that's represented on the host file system. 
+Next you will create a file in our container, and see how that's represented on the host file system. 
 
 1. Start a Debian container, shell into it.   
 
