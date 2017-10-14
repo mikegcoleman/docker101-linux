@@ -627,8 +627,9 @@ The output above shows the containers that werer running on `node2` have been sh
 14. List the status of our services
 ```
 $ docker service ls
-docker service lsID                  NAME                MODE                REPLICAS            IMAGE                               PORTS
-qbeqlc6v0g0z        appserver           replicated          6/6                 dockersamples/atsea-appserver:3.0   *:8080->8080/tcps3luy288gn9l        database            replicated          1/1                 sixeyed/atsea-db:mssql
+ID                  NAME                MODE                REPLICAS            IMAGE                               PORTS
+qbeqlc6v0g0z        appserver           replicated          6/6                 dockersamples/atsea-appserver:3.0   *:8080->8080/tcps3luy288gn9l        
+database            replicated          1/1                 sixeyed/atsea-db:mssql
 ```
 
 In a minute or two all the services should be restarted, and Swarm will report back that it has 6 of the expected 6 containers running
