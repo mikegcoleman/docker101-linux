@@ -425,7 +425,7 @@ $ docker service create \
  --network atsea \
  --name appserver \
  --detach=true \
- dockersamples/atsea-appserver:1.0
+ mikegcoleman/atsea_appserver:1.0
  tqvr2cxk31tr0ryel5ey4zmwr
  ```
 
@@ -524,5 +524,53 @@ $ docker service update \
 
  ```
  $ docker service ps appserver
+ ```
 
- 
+ 7. Upgrade to version 3
+```
+ $ docker service update \
+ --image dockersamples/atsea-appserver:3.0 \
+ --update-failure-action pause \
+ --detach=true \
+ appserver
+```
+
+8. Reload website
+
+9. Scale 
+
+```
+$  docker service update \
+--replicas=6 \
+--detach=true \
+appserver
+```
+
+10. Check status
+
+```
+$  docker service ls
+```
+
+```
+$ docker service ps appserver
+```
+
+11. "Fail" a node 
+
+```
+$ docker node update \
+ --availability=drain \
+ node2
+```
+
+12. check status
+
+```
+$ docker service ls
+```
+
+```
+$ docker service ps appserver
+```
+
