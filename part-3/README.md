@@ -132,7 +132,7 @@ Notice that the same networks names exist on `node2` but their ID's are differen
 
 5. Move back to `node1`
 
-6. Create an Alpine container named `alpine_host` running the `top` process in the `detached` mode and attach it to the `mybridge` network.
+6. Create an Alpine container named `alpine_host` running the `top` process in `detached` mode and connecit it to the `mybridge` network.
 
 ```
 $ docker container run \
@@ -140,7 +140,11 @@ $ docker container run \
   --network mybridge \
   --name alpine_host \
   alpine top
-5cc5eeaf703b8e469b25725ddea4c6e563c03ca0403c64bf87f32c5ec5a890fe
+Unable to find image 'alpine:latest' locally
+latest: Pulling from library/alpine88286f41530e: Pull complete
+Digest: sha256:f006ecbb824d87947d0b51ab8488634bf69fe4094959d935c0c103f4820a417d
+Status: Downloaded newer image for alpine:latest
+974903580c3e452237835403bf3a210afad2ad1dff3e0b90f6d421733c2e05e6
 ```
 > Note: We run the `top` process to keep the container from exiting as soon as it's created. 
 
@@ -157,11 +161,11 @@ c81a3a14f43fed93b6ce2eb10338c1749fde0fe7466a672f6d45e11fb3515536
 8. Attempt to PING `alpine_host` from `alpine_client`
 
 ```
-docker exec alpine_client ping alpine_host
+$ docker exec alpine_client ping alpine_host
 ping: bad address 'alpine_host'
 ```
 
-Because the two containers are not on the same network they cannot see each other. 
+Because the two containers are not on the same network they cannot reach each other. 
 
 9. Inspect `alpine_host` and `alpine_client` to see which networks they are attached to.
 
@@ -187,11 +191,12 @@ alpine_client
 11. Start another container called `alpine_client` but attach it to the `mybridge` network this time. 
 
 ```
-docker container run \
+$ docker container run \
   --detach \
   --network mybridge \
   --name alpine_client \
   alpine top
+8cf39f89560fa8b0f6438222b4c5e3fe53bdeab8133cb59038650231f3744a79
 ```
 
 12. Verify via `inspect` that `alpine_client` is on the `mybridge` network
@@ -201,7 +206,7 @@ $ docker inspect -f {{.NetworkSettings.Networks}} alpine_client
 map[mybridge:0xc42043e0c0]
 ```
 
-13. PING `alpine_host` from `apline_client`
+13. PING `alpine_host` from `alpine_client`
 
 ```
 docker exec alpine_client ping -c 5 alpine_host
@@ -217,11 +222,11 @@ PING alpine_host (172.20.0.2): 56 data bytes
 round-trip min/avg/max = 0.088/0.106/0.122 ms
 ```
 
-Something to notice is that it was not necessary to specify an IP address.  Docker has a built in DNS that resolved `alpine_host` to the correct address. 
+Something to notice is that it was not necessary to specify an IP address.  Docker has a built in DNS that resolved `alpine_client` to the correct address. 
 
 Being able to network containers on a single host is not extremely useful. It might be fine for a simple test envrionment, but production environments require the ability provide the scalability and fault tolerance that comes from having multiple interconnected hosts. 
 
-This is where overlay networking comes in
+This is where overlay networking comes in.
 
 ### Overlay Neworking Overview
 
@@ -245,7 +250,7 @@ z16nhzxwbeukjnz3e6nk2159p
 3. List the networks on the host to verify that the `myoverlay` network was created. 
 
 ```
-docker network ls
+$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 edf9dc771fc4        bridge              bridge              local
 e5702f60b7c9        docker_gwbridge     bridge              local
@@ -329,7 +334,9 @@ PING alpine_host (10.0.0.2): 56 data bytes
 ```
 Networking also works betwen Linux and Windows nodes
 
-9. Ping `alpine_host` from the Windows node
+9. Move to the Windows node
+
+10. Ping `alpine_host` from the Windows node
 
 ```
 PS C:\> docker container run `
@@ -345,7 +352,7 @@ Reply from 10.0.0.2: bytes=32 time<1ms TTL=64
 Reply from 10.0.0.2: bytes=32 time<1ms TTL=64
 ```
 
-> Note: In some cases it may take a few seconds for the Windows client to find the alpine host resutling in PING timeouts. 
+> Note: In some cases it may take a few seconds for the Windows client to find the alpine host resutling in PING timeouts. If this happens, simply retry the above command.
 
 ## Deploying Swarm services
 
@@ -369,12 +376,13 @@ This lab will deploy a two service application.  The application features a Java
 
 ### Deploying a Multi-OS Application with Docker Swarm
 
-1. Move to `node`
+1. Move to `node1`
 
 2. Create an overlay network for the application
 
 ```
-$ docker network create -d overlay atseafoqztzic1x95kiuq9cuqwuldi
+$ docker network create -d overlay atsea
+foqztzic1x95kiuq9cuqwuldi
 ```
 
 3. Deploy the database service
@@ -402,20 +410,11 @@ The service is created with the following parameters:
 
 ```
 $ docker service ps database
-docker service ps database
 ID                  NAME                IMAGE                          NODE                DESIRED STATE       CURRENT STATE      ERROR               PORTS
 rgwtocu21j0f        database.1          dockersamples/atsea-db:mssql   win00003R           Running             Running 3 minutesago
 ```
 
-5. Check the logs of the running service
-
-```
-$ docker service logs database
-<output snipped>
-database.1.rgwtocu21j0f@win00003R    | VERBOSE: Inserted Product seed data
-database.1.rgwtocu21j0f@win00003R    | VERBOSE: Update complete.
-database.1.rgwtocu21j0f@win00003R    | VERBOSE: Started SQL Server.
-```
+> Note: Keep checking the status of the service until the `CURRENT STATE` is running. This usually takes 2-3 minutes
 
 6. Start the web front-end service
 
@@ -467,7 +466,7 @@ So long as the database service is started with the name `database` and is on th
 
 A common scenario is the need to upgrade an application or application component. In this section we are going to unsuccessfully attempt to ugrade the web front-end. We'll rollback from that attempt, and then perform a successful upgrade.
 
-1. Make sure you're on `node`
+1. Make sure you're on `node1`
 
 To upgrade our application we're simply going to roll out an updated Docker image. In this case version `2.0`.
 
@@ -508,7 +507,9 @@ $ docker service inspect -f '{{json .UpdateStatus}}' appserver | jq
 }
 ```
 
-Because we had set ` --update-failure-action` to pause, Swarm paused the service. 
+Because we had set ` --update-failure-action` to pause, Swarm paused the update. 
+
+In the case of failed upgrade, Swarm makes it easy to recover. Simply issue the `--rollback` command to the service. 
 
 5. Roll the service back to the original version
 
@@ -524,20 +525,37 @@ $ docker service update \
 
  ```
  $ docker service ps appserver
+ ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE                 ERROR      PORTS
+yoswxm44q9vg        appserver.1         mikegcoleman/atsea_appserver:1.0    node2               Running             Running 11 seconds ago
+lacfi5xiu6e7         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Shutdown 25 seconds ago
+tvcr9dwvm578         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 49 seconds ago         "task: non-zero exit (143): do…"
+xg4274jpochx         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed about a minute ago     "task: non-zero exit (143): do…"
+z7toh7jwk8qf         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node1               Shutdown            Shutdown about a minute ago
  ```
 
- 7. Upgrade to version 3
+The top line shows the service is back on the `1.0` version, and running. 
+
+7. Visit the website to makes sure it's running
+
+That was a simulated upgrade failure and rollback. Next the service will be successfully upgraded to version 3 of the app. 
+
+8. Upgrade to version 3
 ```
  $ docker service update \
  --image dockersamples/atsea-appserver:3.0 \
  --update-failure-action pause \
  --detach=true \
  appserver
+ appserver
 ```
 
-8. Reload website
+9. Reload website the website once again to verify that the new version has been deployed
 
-9. Scale 
+### Scale the front end
+
+The new update has really increased traffic to the site. As a result we need to scale our web front end out. This is done by issuing a `docker service update` and specifying the number of replicas to deploy. 
+
+10. Scale to 6 replicas of the web front-end
 
 ```
 $  docker service update \
@@ -546,17 +564,37 @@ $  docker service update \
 appserver
 ```
 
-10. Check status
-
-```
-$  docker service ls
-```
+11. Check the status of the update
 
 ```
 $ docker service ps appserver
+ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE             ERROR
+  PORTS
+vfbzj3axoays        appserver.1         dockersamples/atsea-appserver:3.0   node1               Running             Running 2 minutes ago
+
+yoswxm44q9vg         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node2               Shutdown            Shutdown 2 minutes ago
+
+tvcr9dwvm578         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 5 minutes ago      "task: non-zero exit (143): do…"
+xg4274jpochx         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 6 minutes ago      "task: non-zero exit (143): do…"
+z7toh7jwk8qf         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node1               Shutdown            Shutdown 7 minutes ago
+i474a8emgwbc        appserver.2         dockersamples/atsea-appserver:3.0   node2               Running             Starting 30 seconds ago
+gu7rphvp2q3l        appserver.3         dockersamples/atsea-appserver:3.0   node2               Running             Starting 30 seconds ago
+gzjdye1kne33        appserver.4         dockersamples/atsea-appserver:3.0   node1               Running             Running 7 seconds ago
+u596cqkgf2aa        appserver.5         dockersamples/atsea-appserver:3.0   node2               Running             Starting 30 seconds ago
+
+jqkokd2uoki6        appserver.6         dockersamples/atsea-appserver:3.0   node1               Running             Running 12 seconds ag
 ```
 
-11. "Fail" a node 
+Docker is starting up 5 new instances of the appserver, and is placing them across both the nodes in the cluster. 
+
+When all 6 nodes are running, move on to the next step. 
+
+### Failure and recovery
+The next exercise simulates a node failure. When a node fails the containers that were running there are, of course, lost as well. Swarm is constantly monitoring the state of the cluster, and when it detects an anomoly it attemps to bring the cluster back in to compliance. 
+
+In it's current state, Swarm expects there to be six instances of the appserver. When the node "fails" thre of those instances will go out of service. 
+
+12. Putting a node into *drain* mode forces it to stop all the running containers it hosrts, as well as preventing it from running any additional containers. 
 
 ```
 $ docker node update \
@@ -564,13 +602,33 @@ $ docker node update \
  node2
 ```
 
-12. check status
+13. Check the status of the service
 
+```
+docker service ps appserver
+ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE             ERROR  PORTS
+vfbzj3axoays        appserver.1         dockersamples/atsea-appserver:3.0   node1               Running             Running 8 minutes ago
+yoswxm44q9vg         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node2               Shutdown            Shutdown 8 minutes ago
+tvcr9dwvm578         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 11 minutes ago     "task: non-zero exit (143): do…"
+xg4274jpochx         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 12 minutes ago     "task: non-zero exit (143): do…"
+z7toh7jwk8qf         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node1               Shutdown            Shutdown 12 minutes ago
+zmp7mfpme2go        appserver.2         dockersamples/atsea-appserver:3.0   node1               Running             Starting 5 seconds ago
+i474a8emgwbc         \_ appserver.2     dockersamples/atsea-appserver:3.0   node2               Shutdown            Shutdown 5 seconds ago
+l7gxju3x6zx8        appserver.3         dockersamples/atsea-appserver:3.0   node1               Running             Starting 5 seconds ago
+gu7rphvp2q3l         \_ appserver.3     dockersamples/atsea-appserver:3.0   node2               Shutdown            Shutdown 5 seconds ago
+gzjdye1kne33        appserver.4         dockersamples/atsea-appserver:3.0   node1               Running             Running 5 minutes ago
+ure9u7li7myv        appserver.5         dockersamples/atsea-appserver:3.0   node1               Running             Starting 5 seconds ago
+u596cqkgf2aa         \_ appserver.5     dockersamples/atsea-appserver:3.0   node2               Shutdown            Shutdown 5 seconds ago
+jqkokd2uoki6        appserver.6         dockersamples/atsea-appserver:3.0   node1               Running             Running 6 minutes ago
+```
+
+The output above shows the containers that werer running on `node2` have been shut down and are being restarted on `node`
+
+14. List the status of our services
 ```
 $ docker service ls
+docker service lsID                  NAME                MODE                REPLICAS            IMAGE                               PORTS
+qbeqlc6v0g0z        appserver           replicated          6/6                 dockersamples/atsea-appserver:3.0   *:8080->8080/tcps3luy288gn9l        database            replicated          1/1                 sixeyed/atsea-db:mssql
 ```
 
-```
-$ docker service ps appserver
-```
-
+In a minute or two all the services should be restarted, and Swarm will report back that it has 6 of the expected 6 containers running
