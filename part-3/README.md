@@ -386,7 +386,7 @@ $ docker service create \
   --network atsea \
   --publish mode=host,target=1433 \
   --detach=true \
- dockersamples/atsea-db:mssql
+ sixeyed/atsea-db:mssql
 ywlkfxw2oim67fuf9tue7ndyi
 ```
 The service is created with the following parameters:
@@ -426,3 +426,41 @@ $ docker service create \
  --name appserver \
  --detach=true \
  dockersamples/atsea-appserver:1.0
+ tqvr2cxk31tr0ryel5ey4zmwr
+ ```
+
+ 7. List all the services running on your host
+
+ ```
+ $ docker service ls
+ID                  NAME                MODE                REPLICAS            IMAGE                               PORTS
+tqvr2cxk31tr        appserver           replicated          1/1                 dockersamples/atsea-appserver:1.0   *:8080->8080/
+tcp
+xkm68h7z3wsu        database            replicated          1/1                 sixeyed/atsea-db:mssql
+```
+
+8. Make sure both services are up and running (check the `Current State`)
+
+```
+docker service ps $(docker service ls -q)
+ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE
+            ERROR               PORTS
+jhetafd6jd7u        database.1          sixeyed/atsea-db:mssql              win00003R           Running             Running 3 min
+utes ago                        *:64024->1433/tcp
+2cah7mw5a5c7        appserver.1         dockersamples/atsea-appserver:1.0   node1               Running             Running 6 min
+utes ago
+```
+
+9. Visit the running website by clicking the `8080` at the top of the PWD screen.
+
+We've successfully deployed our application. One thing to note is that we did not have to tell Swarm to put the database on the Windows node or the Java webserver on the Linux node. It was able to sort that out by itself. 
+
+Another key point is that our application code knows nothing about our networking code. The only think it knows is that the database hostname is going to be `database`. So in our application code database connection string looks like this;
+
+```
+jdbc:sqlserver://database;user=MyUserName;password=*****;
+```
+
+So long as the database service is started with the name `database` and is on the same Swarm network, the two services can talk. 
+
+
