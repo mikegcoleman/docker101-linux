@@ -68,7 +68,7 @@ In this step we're going to start a new container and tell it to run the `hostna
   888e89a3b36b
   ```
 
-  The output above shows that the `alpine:latest` image could not be found locally. When this happens, Docker automatically *pulls* it form Docker Hub.
+  The output above shows that the `alpine:latest` image could not be found locally. When this happens, Docker automatically *pulls* it from Docker Hub.
 
   After the image is pulled, the container's hostname is displayed (`888e89a3b36b` in the example above).
 
@@ -200,7 +200,14 @@ Background containers are how you'll run most applications. Here's a simple exam
 	2876                999                 0:00                mysqld
 	```
 
-	You should see the MySQL demon (`mysqld`) is running.
+	You should see the MySQL demon (`mysqld`) is running. Note that the PID shown here is the PID for this process on your docker host. To see the same `mysqld` process running as the main process of the container (PID 1) try:
+	
+	```
+	$ docker container exec mydb ps -ef
+	UID         PID   PPID  C STIME TTY          TIME CMD
+	mysql         1      0  0 21:00 ?        00:00:01 mysqld
+	root        207      0  0 21:39 ?        00:00:00 ps -ef
+	```
 
 	Although MySQL is running, it is isolated within the container because no network ports have been published to the host. Network traffic cannot reach containers from the host unless ports are explicitly published.
 
@@ -275,9 +282,9 @@ Let's have a look at the  Dockerfile we'll be using, which builds a simple websi
 
 	Let's see what each of these lines in the Dockerfile do.
 
-	- [FROM](https://docs.docker.com/engine/reference/builder/#from) specifies the base image to use as the starting point for this new image you're creating. For this example we're starting from `nginx:latest`.
+	- [FROM](https://docs.docker.com/engine/reference/builder/#from) specifies the base image to use as the starting point for this new image you're creating. For this example we're starting from `nginx:latest`. You can find a full catalog of base images that you can use including this nginx image on the [Docker Hub](https://hub.docker.com).
 	- [COPY](https://docs.docker.com/engine/reference/builder/#copy) copies files from the host into the image, at a known location. In our case it copies `index.html` and a graphic that will be used on our webpage.
-	- [EXPOSE](https://docs.docker.com/engine/reference/builder/#expose) documents which ports the application uses.
+	- [EXPOSE](https://docs.docker.com/engine/reference/builder/#expose) documents which ports the application uses. This doesn't automatically expose the ports outside the container, will still need to use the `--publish` flag as you will see later.
 	- [CMD](https://docs.docker.com/engine/reference/builder/#cmd) specifies what command to run when a container is started from the image. Notice that we can specify the command, as well as run-time arguments.
 
 3. In order to make commands more copy/paste friendly, export an environment variable containing your DockerID (if you don't have a DockerID you can get one for free via [Docker Cloud](https://cloud.docker.com))
@@ -289,7 +296,7 @@ Let's have a look at the  Dockerfile we'll be using, which builds a simple websi
 4. To make sure it stored correctly echo it back to the terminal
 
   ```
-  $ echo $DOCKERID`
+  $ echo $DOCKERID
   <your docker id>
   ```
 
@@ -485,7 +492,7 @@ To save the changes you made to the `index.html` file earlier, you need to build
 	--publish 80:80 \
 	--name linux_tweet_app \
 	$DOCKERID/linux_tweet_app:2.0
-	```
+  ```
 
 2. Click on the `80` at the top of your Play with Docker screen to view the updated version of the web app.
 
@@ -518,7 +525,7 @@ List the images on your Docker host. You will see that you now have two `linux_t
   mikegcoleman/linux_tweet_app   1.0                 bb32b5783cd3        7 minutes ago       108MB
   ```
 
-Those images are only stored in your Docker hosts local repository. You Docker host will be deleted after the workshop. In this step we'll push the images to a public repository so you can run them from any Linux machine with Docker.
+Those images are only stored in your Docker host's local repository. Your Docker host will be deleted after the workshop. In this step we'll push the images to a public repository so you can run them from any Linux machine with Docker.
 
 Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Linux and Docker.
 
