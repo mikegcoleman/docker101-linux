@@ -44,7 +44,7 @@ To add a manager to this swarm, run 'docker swarm join-token manager' and follow
 
 5. Copy the `docker swarm join` output from `node1`
 
-6. Switch to `node1` and paste in the command. **Be sure to copy the output from your PWD window, not from this lab guide**
+6. Switch to `node2` and paste in the command. **Be sure to copy the output from your PWD window, not from this lab guide**
 
 ```
 $ docker swarm join --token SWMTKN-1-53ao1ihu684vpcpjuf332bi4et27qiwxajefyqryyj4o0indm7-b2zc5ldudkxcmf6kcncft8t12 192.168.0.13:2377
@@ -67,10 +67,10 @@ The three nodes have now been clustered into a single Docker swarm. An important
 
 ```
 $ docker node ls
-$ docker node ls
 ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS
-ujsz5fd1ozr410x1ywuix7sik *   node1               Ready               Active              Leader60v5h787wkjbtxs6dkoj1kgqn     node2               Ready               Active
-t4zejugh4davz37d6h98wheu6     win00003R           Ready               Active
+uqqgsvc1ykkgoamaatcun89wt *   node1               Ready               Active              Leader
+g4demzyr7sd2ngpa8wntbo0l4     node2               Ready               Active
+xflngp99u1r9pn7bryqbbrrvq     win000046           Ready               Active
 ```
 
 Commands against the swarm can only be issued from the manager node. Attempting to run the above command against `node2` or the Windows node would result in an error. 
@@ -93,7 +93,7 @@ Overlay networks faciliate the creation of networks that span Docker hosts. Whil
 1. On `node1` create a bridge network (`mybridge`)
 
 ```
-$ docker network create my bridge
+$ docker network create mybridge
 52fb9de4ad1cbe505e451599df2cb62c53e56893b0c2b8d9b8715b5e76947551
 ```
 
@@ -130,7 +130,7 @@ rnyatjul3qhn        ingress             overlay             swarm
 
 Notice that the same networks names exist on `node2` but their ID's are different. And, `mybridge` does not show up at all. 
 
-5. Move back to `node`
+5. Move back to `node1`
 
 6. Create an Alpine container named `alpine_host` running the `top` process in the `detached` mode and attach it to the `mybridge` network.
 
