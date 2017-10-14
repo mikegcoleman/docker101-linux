@@ -463,4 +463,66 @@ jdbc:sqlserver://database;user=MyUserName;password=*****;
 
 So long as the database service is started with the name `database` and is on the same Swarm network, the two services can talk. 
 
+### Upgrades and Rollback
 
+A common scenario is the need to upgrade an application or application component. In this section we are going to unsuccessfully attempt to ugrade the web front-end. We'll rollback from that attempt, and then perform a successful upgrade.
+
+1. Make sure you're on `node`
+
+To upgrade our application we're simply going to roll out an updated Docker image. In this case version `2.0`.
+
+2. Upgrade the Appserver service to version 2.0
+
+```
+$ docker service update \
+ --image dockersamples/atsea-appserver:2.0 \
+ --update-failure-action pause \
+ --detach=true \
+ appserver
+
+```
+
+3. Check on the status of the upgrade
+
+```
+$ docker service ps appserver
+ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE
+                     ERROR                              PORTS
+pjt4g23r0oo1        appserver.1         dockersamples/atsea-appserver:2.0   node1               Running             Starting less
+ than a second ago
+usx1sk2gtoib         \_ appserver.1     dockersamples/atsea-appserver:2.0   node2               Shutdown            Failed 5 seco
+nds ago              "task: non-zero exit (143): do…"
+suee368vg3r1         \_ appserver.1     dockersamples/atsea-appserver:1.0   node1               Shutdown            Shutdown 24 seconds ago
+```
+
+Clearly there is some issue, as the containers are failing to start. 
+
+4. Check on the satus of the update
+
+```
+$ docker service inspect -f '{{json .UpdateStatus}}' appserver | jq
+{
+  "State": "paused",
+  "StartedAt": "2017-10-14T00:38:30.188743311Z",
+  "Message": "update paused due to failure or early termination of task umidyotoa5i4gryk5vsrutwrq"
+}
+```
+
+Because we had set ` --update-failure-action` to pause, Swarm paused the service. 
+
+5. Roll the service back to the original version
+
+```
+$ docker service update \
+ --rollback \
+ --detach=true \
+ appserver
+ appserver
+ ```
+
+ 6. Check on the status of the service
+
+ ```
+ $ docker service ps appserver
+
+ 
