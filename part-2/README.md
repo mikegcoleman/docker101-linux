@@ -13,7 +13,7 @@ The [Docker documentation](https://docs.docker.com/engine/userguide/storagedrive
 * To persist data (and improve performance) Volumes are used. 
 * Volumes (and the directories they are built on) are not managed by the storage driver, and will live on if a container is removed.  
 
-The following exercises will help to illustrate those concepts in practicc. 
+The following exercises will help to illustrate those concepts in practice. 
 
 Let's start by looking at layers and how files written to a container are managed by something called *copy on write*.
 
