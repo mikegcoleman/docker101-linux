@@ -56,7 +56,7 @@ The first layer pulled says:
 
 `85b1f47fba49: Already exists`
 
-Notice that the layer id (`85b1f47fba498`) is the same for the first layer of the MySQl image and the only layer in the Debian:Jessie image. And because we already had pulled that layer when we pulled the Debian image, we didn't have to pull it again. 
+Notice that the layer id (`85b1f47fba498`) is the same for the first layer of the MySQL image and the only layer in the Debian:Jessie image. And because we already had pulled that layer when we pulled the Debian image, we didn't have to pull it again. 
 
 So, what does that tell us about the MySQL image? Since each layer is created by a line in the image's *Dockerfile*, we know that the MySQL image is based on the Debian:Jessie base image. We can confirm this by looking at the [Dockerfile on Docker Store](https://github.com/docker-library/mysql/blob/0590e4efd2b31ec794383f084d419dea9bc752c4/5.7/Dockerfile). 
 
@@ -83,7 +83,7 @@ bin   dev  home  lib64  mnt  proc  run   srv  test-file  usrboot  etc  lib   med
 
 We can see  `test-file` exists in the root of the containers file system. 
 
-What has happened is that when a new file was written to the disk, the Docker storage driver placed that file in it's own layer. This is called *copy on write* - as soon as a change is detected the change is copied into the writeable layer. That layers is represented by a directory on the host file system. All of this is managed by the Docker storage driver. 
+What has happened is that when a new file was written to the disk, the Docker storage driver placed that file in it's own layer. This is called *copy on write* - as soon as a change is detected the change is copied into the writeable layer. That layer is represented by a directory on the host file system. All of this is managed by the Docker storage driver. 
 
 3. Exit the container but leave it running by pressing `ctrl-p` and then `ctrl-q`
 
@@ -268,7 +268,7 @@ client-key.pem      ibtmp1              sample
 
 Notice the the directory name starts with `/var/lib/docker/volumes/` whereas for directories managed by the Overlay2 storage driver it was `/var/lib/docker/overlay2`
 
-As mentined anonymous volumes will not persist data between containers, they are almost always used to increase performance. 
+As mentioned earlier, anonymous volumes will not persist data between containers, they are almost always used to increase performance. 
 
 4. Shell into your running MySQL container and log into MySQL
 
