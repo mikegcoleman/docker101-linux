@@ -19,6 +19,8 @@ The next part of the lab will start with the deployment of a 3 node Docker swarm
 
 ### Build your cluster
 
+Note: If you have just completed a previous part of the workshop, please close that session and start a new one.
+
 1. In the PWD interface click `+ Add new instance` to instantiate a linux node
 
   > Note: If you've closed the PWD interface, simply go back to [the PWD site](https://dockercon.play-with-docker.com)

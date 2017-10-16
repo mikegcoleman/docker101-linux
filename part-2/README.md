@@ -19,6 +19,10 @@ Let's start by looking at layers and how files written to a container are manage
 
 ## Layers and Copy on Write
 
+> Note: If you have just completed part 1 of the workshop, please close that session and start a new one. 
+
+1. In PWD click "+Add new instance" and move into that command windows.
+
 1. Pull down the Debian:Jessie image
 
     ```
