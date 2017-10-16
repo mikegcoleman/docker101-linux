@@ -199,8 +199,15 @@ Background containers are how you'll run most applications. Here's a simple exam
     PID                 USER                TIME                COMMAND
     2876                999                 0:00                mysqld
     ```
-
-    You should see the MySQL demon (`mysqld`) is running.
+    
+	You should see the MySQL demon (`mysqld`) is running. Note that the PID shown here is the PID for this process on your docker host. To see the same `mysqld` process running as the main process of the container (PID 1) try:
+	
+	```
+	$ docker container exec mydb ps -ef
+	UID         PID   PPID  C STIME TTY          TIME CMD
+	mysql         1      0  0 21:00 ?        00:00:01 mysqld
+	root        207      0  0 21:39 ?        00:00:00 ps -ef
+	```
 
     Although MySQL is running, it is isolated within the container because no network ports have been published to the host. Network traffic cannot reach containers from the host unless ports are explicitly published.
 
@@ -517,7 +524,7 @@ List the images on your Docker host. You will see that you now have two `linux_t
     mikegcoleman/linux_tweet_app   1.0                 bb32b5783cd3        7 minutes ago       108MB
     ```
 
-Those images are only stored in your Docker hosts local repository. You Docker host will be deleted after the workshop. In this step we'll push the images to a public repository so you can run them from any Linux machine with Docker.
+Those images are only stored in your Docker host's local repository. Your Docker host will be deleted after the workshop. In this step we'll push the images to a public repository so you can run them from any Linux machine with Docker.
 
 Distribution is built into the Docker platform. You can build images locally and push them to a public or private [registry](https://docs.docker.com/registry/), making them available to other users. Anyone with access can pull that image and run a container from it. The behavior of the app in the container will be the same for everyone, because the image contains the fully-configured app - the only requirements to run it are Linux and Docker.
 
