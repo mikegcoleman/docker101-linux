@@ -21,6 +21,8 @@ The next part of the lab will start with the deployment of a 3 node Docker swarm
 
 1. In the PWD interface click `+ Add new instance` to instantiate a linux node
 
+> Note: If you've closed the PWD interface, simply go back to [the PWD site](https://dockercon.play-with-docker.com)
+
 2. Repeat step 1 to add a second node to the cluster.
 
 3. Click the `Windows containers` slider and then click `+ Add New Instance`
