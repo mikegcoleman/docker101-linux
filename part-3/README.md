@@ -610,7 +610,7 @@ The next exercise simulates a node failure. When a node fails the containers tha
 
 In it's current state, Swarm expects there to be six instances of the appserver. When the node "fails" thre of those instances will go out of service. 
 
-12. Putting a node into *drain* mode forces it to stop all the running containers it hosrts, as well as preventing it from running any additional containers. 
+12. Putting a node into *drain* mode forces it to stop all the running containers it hosts, as well as preventing it from running any additional containers. 
 
 ```
 $ docker node update \
