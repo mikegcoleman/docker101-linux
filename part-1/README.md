@@ -392,7 +392,7 @@ When you use a bind mount, a file or directory on the host machine is mounted in
     --publish 80:80 \
     --name linux_tweet_app \
     --mount type=bind,source="$(pwd)",target=/usr/share/nginx/html \
-  $DOCKERID/linux_tweet_app:1.0
+    $DOCKERID/linux_tweet_app:1.0
     ```
 
     > Remember from our Dockerfile `usr/share/nginx/html` is where are html files are stored for our web app
