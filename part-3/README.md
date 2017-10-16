@@ -447,7 +447,7 @@ xkm68h7z3wsu        database            replicated          1/1                 
 8. Make sure both services are up and running (check the `Current State`)
 
 ```
-docker service ps $(docker service ls -q)
+$ docker service ps $(docker service ls -q)
 ID                  NAME                IMAGE                               NODE                DESIRED STATE       CURRENT STATE
             ERROR               PORTS
 jhetafd6jd7u        database.1          sixeyed/atsea-db:mssql              win00003R           Running             Running 3 min
@@ -460,7 +460,7 @@ utes ago
 
 We've successfully deployed our application. One thing to note is that we did not have to tell Swarm to put the database on the Windows node or the Java webserver on the Linux node. It was able to sort that out by itself. 
 
-Another key point is that our application code knows nothing about our networking code. The only think it knows is that the database hostname is going to be `database`. So in our application code database connection string looks like this;
+Another key point is that our application code knows nothing about our networking code. The only thing it knows is that the database hostname is going to be `database`. So in our application code database connection string looks like this;
 
 ```
 jdbc:sqlserver://database;user=MyUserName;password=*****;
@@ -555,7 +555,18 @@ That was a simulated upgrade failure and rollback. Next the service will be succ
  appserver
 ```
 
-9. Reload website the website once again to verify that the new version has been deployed
+9. Check the status of the upgrade
+
+```
+$ docker service ps appserver
+ID                  NAME                IMAGE                               NODEDESIRED STATE       CURRENT STATE             ERROR                              PORTS
+ytygwmyhumrt        appserver.1         dockersamples/atsea-appserver:3.0   node1Running             Running 29 seconds ago
+zjkmbjw7u8e0         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node1Shutdown            Shutdown 47 seconds ago
+wemedok12frl         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1Shutdown            Failed 2 minutes ago      "task: non-zero exit (143): do…"
+u6wd7wje82zn         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1Shutdown            Failed 2 minutes ago      "task: non-zero exit (143): do…"
+```
+
+10. Once the status reports back "Running xx seconds", reload website the website once again to verify that the new version has been deployed
 
 ### Scale the front end
 
@@ -568,6 +579,7 @@ $  docker service update \
 --replicas=6 \
 --detach=true \
 appserver
+appserver
 ```
 
 11. Check the status of the update
@@ -579,7 +591,6 @@ ID                  NAME                IMAGE                               NODE
 vfbzj3axoays        appserver.1         dockersamples/atsea-appserver:3.0   node1               Running             Running 2 minutes ago
 
 yoswxm44q9vg         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node2               Shutdown            Shutdown 2 minutes ago
-
 tvcr9dwvm578         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 5 minutes ago      "task: non-zero exit (143): do…"
 xg4274jpochx         \_ appserver.1     dockersamples/atsea-appserver:2.0   node1               Shutdown            Failed 6 minutes ago      "task: non-zero exit (143): do…"
 z7toh7jwk8qf         \_ appserver.1     mikegcoleman/atsea_appserver:1.0    node1               Shutdown            Shutdown 7 minutes ago
@@ -587,7 +598,6 @@ i474a8emgwbc        appserver.2         dockersamples/atsea-appserver:3.0   node
 gu7rphvp2q3l        appserver.3         dockersamples/atsea-appserver:3.0   node2               Running             Starting 30 seconds ago
 gzjdye1kne33        appserver.4         dockersamples/atsea-appserver:3.0   node1               Running             Running 7 seconds ago
 u596cqkgf2aa        appserver.5         dockersamples/atsea-appserver:3.0   node2               Running             Starting 30 seconds ago
-
 jqkokd2uoki6        appserver.6         dockersamples/atsea-appserver:3.0   node1               Running             Running 12 seconds ag
 ```
 
