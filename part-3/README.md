@@ -90,6 +90,8 @@ Overlay networks faciliate the creation of networks that span Docker hosts. Whil
 
 ### Bridge networking overview
 
+As previously mentioned, bridge networks faciliate the create of software-defined networks on a single Docker host. Containers on one bridge network cannot communicate with containers on a different bridge network (unless they communicate via the network the Docker host resides on).
+
 1. On `node1` create a bridge network (`mybridge`)
 
 ```
@@ -229,6 +231,10 @@ Being able to network containers on a single host is not extremely useful. It mi
 This is where overlay networking comes in.
 
 ### Overlay Neworking Overview
+
+Overlay networks in Docker are software defined networks that span multiple hosts (unlike a bridge network which is limited to a single Docker host). This allows containers on different hosts to easily communicate on the Docker networking fabric (vs having to move out to the host's network).
+
+This next section covers building an overlay network and having two containers communicate with each other. 
 
 1. Remove the existing Alpine containers
 
