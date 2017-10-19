@@ -414,14 +414,14 @@ This lab will deploy a two service application.  The application features a Java
     * `--network`: Attaches the containers from our service to the `atsea` network
     * `--publish`: Exposes port 1433 but only on the Windows host. 
     * `--detach`: Runs the service in the background
-    * Our service is based off the image `dockersamples/atsea-db:mssql`
+    * Our service is based off the image `sixeyed/atsea-db:mssql`
 
 4. Check the status of your service
 
     ```
     $ docker service ps database
     ID                  NAME                IMAGE                          NODE                DESIRED STATE       CURRENT STATE      ERROR               PORTS
-    rgwtocu21j0f        database.1          dockersamples/atsea-db:mssql   win00003R           Running             Running 3 minutesago
+    rgwtocu21j0f        database.1          sixeyed/atsea-db:mssql   win00003R           Running             Running 3 minutesago
     ```
 
     > Note: Keep checking the status of the service until the `CURRENT STATE` is running. This usually takes 2-3 minutes
