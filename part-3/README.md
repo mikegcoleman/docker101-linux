@@ -376,7 +376,7 @@ The service construct provides a host of useful features including:
 * Layer 4 and layer 7 routing meshes
 * Desired state reconciliation
 * Service discovery
-* Helthchecks
+* Healthchecks
 * Upgrades and rollback
 * Scaling
 
