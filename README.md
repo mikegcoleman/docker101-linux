@@ -2,7 +2,7 @@
 
 There are three parts this lab
 
-* [Part 1](./part1.md) deals with basic container management
+* [Part 1](../tree/master/part-1) deals with basic container management
 * Part 2 covers the Docker file system and Docker volumes (including persistent data)
 * Part 3 talks about orchestration with Swarm and how Docker handles networking
 
