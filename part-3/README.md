@@ -376,7 +376,7 @@ The service construct provides a host of useful features including:
 * Layer 4 and layer 7 routing meshes
 * Desired state reconciliation
 * Service discovery
-* Helthchecks
+* Healthchecks
 * Upgrades and rollback
 * Scaling
 
@@ -642,7 +642,7 @@ In it's current state, Swarm expects there to be six instances of the appserver.
     jqkokd2uoki6        appserver.6         dockersamples/atsea-appserver:3.0   node1               Running             Running 6 minutes ago
     ```
 
-    The output above shows the containers that werer running on `node2` have been shut down and are being restarted on `node`
+    The output above shows the containers that where running on `node2` have been shut down and are being restarted on `node`
 
 3. List the status of our services
 
